@@ -1,3 +1,6 @@
 node_modules/
 *.zip
 .DS_Store
+dist/server/
+__pycache__/
+.env

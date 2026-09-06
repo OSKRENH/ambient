@@ -1,8 +1,9 @@
+import {setupYouTube} from './youtube.js';
 import {AmbientEngine,makeDemo} from './audio.js';
 import {defaults,sanitize,norm,hz,semitones,grainSeconds,intervalSeconds,encodeWav} from './parameters.js';
 
 const $=id=>document.getElementById(id),engine=new AmbientEngine();
-let values={...defaults},presets=[],busy=false,recordStarted=0,noticeTimer,sourceName='Мягкие струны · демо';
+let values={...defaults},presets=[],busy=false,sourceImportBusy=false,recordStarted=0,noticeTimer,sourceName='Мягкие струны · демо';
 const controls=new Map();
 const percent=v=>Math.round(norm(v)*100)+' %';
 const pitch=v=>(semitones(v)>0?'+':'')+semitones(v).toFixed(1)+' st';
@@ -26,7 +27,7 @@ $('presets').addEventListener('change',()=>{if($('presets').value==='default')ap
 $('reset').onclick=()=>{apply(defaults);$('presets').value='default';notify('Вернули стартовые настройки «Туман».');};
 
 function transport(){const active=engine.active&&engine.ctx?.state==='running';$('play-icon').textContent=active?'Ⅱ':'▶';$('play-label').textContent=active?'Пауза':'Слушать';$('play').setAttribute('aria-label',active?'Приостановить воспроизведение':'Начать воспроизведение');$('record').classList.toggle('active',engine.recording);$('record-label').textContent=engine.recording?'Завершить запись':'Записать WAV';$('record-clock').hidden=!engine.recording;}
-async function action(fn){if(busy)return;busy=true;for(const id of ['play','stop','record','demo','upload'])$(id).disabled=true;try{await fn();}catch(e){notify(e.message||'Не удалось выполнить действие. Попробуйте ещё раз.');}finally{busy=false;for(const id of ['play','stop','record','demo','upload'])$(id).disabled=false;transport();}}
+async function action(fn){if(busy)return;busy=true;for(const id of ['play','stop','record','demo','upload'])$(id).disabled=true;try{await fn();}catch(e){notify(e.message||'Не удалось выполнить действие. Попробуйте ещё раз.');}finally{busy=false;for(const id of ['play','stop','record','demo','upload'])$(id).disabled=sourceImportBusy&&['demo','upload'].includes(id);transport();}}
 $('play').onclick=()=>action(async()=>{if(engine.active&&engine.ctx?.state==='running'){await engine.pause();$('status').textContent='Пауза';}else{await engine.play();$('status').textContent='Воспроизведение';}});
 $('stop').onclick=()=>action(async()=>{await engine.stop();$('status').textContent='Остановлено';});
 engine.onState=state=>{transport();if(state==='interrupted')$('status').textContent='Нажмите «Слушать», чтобы продолжить';};
@@ -43,7 +44,7 @@ let offline;
 try{const OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;offline=new OC(2,1,44100);setSource(makeDemo(offline),sourceName);}catch(e){$('status').textContent='Аудио недоступно';notify('Этот браузер не поддерживает необходимые аудиофункции.');}
 $('demo').onclick=()=>action(async()=>{if(!offline)throw Error('Web Audio недоступен.');await engine.stop();setSource(makeDemo(offline),'Мягкие струны · демо');$('status').textContent='Готов к звуку';});
 $('upload').onclick=()=>$('audio-file').click();
-async function loadAudio(file){if(!file)return;if(file.size>40*1024*1024){notify('Выберите аудио до 40 МБ и длительностью до 2 минут.');return;}await action(async()=>{if(!offline)throw Error('Web Audio недоступен.');$('status').textContent='Читаем аудио…';let buffer;try{buffer=await offline.decodeAudioData(await file.arrayBuffer());}catch{ $('status').textContent='Не удалось открыть';throw Error('Не удалось прочитать аудио. Попробуйте WAV, MP3 или M4A.');}if(buffer.duration>120){$('status').textContent='Файл слишком длинный';throw Error('Для обработки выберите фрагмент до 2 минут.');}if(buffer.duration<.05){$('status').textContent='Файл слишком короткий';throw Error('Выберите аудио длиннее 50 мс.');}await engine.stop();setSource(buffer,file.name);$('status').textContent='Готов к звуку';});}
+async function loadAudio(file){if(!file)return;if(sourceImportBusy){notify('Дождитесь импорта или отмените его.');return;}if(file.size>40*1024*1024){notify('Выберите аудио до 40 МБ и длительностью до 2 минут.');return;}await action(async()=>{if(!offline)throw Error('Web Audio недоступен.');$('status').textContent='Читаем аудио…';let buffer;try{buffer=await offline.decodeAudioData(await file.arrayBuffer());}catch{ $('status').textContent='Не удалось открыть';throw Error('Не удалось прочитать аудио. Попробуйте WAV, MP3 или M4A.');}if(buffer.duration>120){$('status').textContent='Файл слишком длинный';throw Error('Для обработки выберите фрагмент до 2 минут.');}if(buffer.duration<.05){$('status').textContent='Файл слишком короткий';throw Error('Выберите аудио длиннее 50 мс.');}await engine.stop();setSource(buffer,file.name);$('status').textContent='Готов к звуку';});}
 $('audio-file').onchange=e=>{loadAudio(e.target.files[0]);e.target.value='';};
 for(const event of ['dragenter','dragover'])$('dropzone').addEventListener(event,e=>{e.preventDefault();$('dropzone').classList.add('dragover');});
 $('dropzone').ondragleave=e=>{if(!$('dropzone').contains(e.relatedTarget))$('dropzone').classList.remove('dragover');};
@@ -66,3 +67,19 @@ let midiAccess;
 $('midi').onclick=async()=>{if(!navigator.requestMIDIAccess){$('midi-state').textContent='Web MIDI недоступен в этом браузере. Экранные регуляторы работают без MIDI.';return;}$('midi').disabled=true;try{midiAccess=await navigator.requestMIDIAccess({sysex:false});const wire=()=>{let count=0;for(const input of midiAccess.inputs.values()){if(input.state!=='connected')continue;count++;input.onmidimessage=({data})=>{if((data[0]&240)!==176)return;const key=midiMap[data[1]];if(!key)return;values[key]=data[2];syncControl(key);custom();engine.setParams(values);};}$('midi-state').textContent=count?'Подключено MIDI-устройств: '+count:'MIDI включён. Подключите контроллер.';};midiAccess.onstatechange=wire;wire();$('midi').textContent='Обновить MIDI';}catch{$('midi-state').textContent='Не удалось подключить MIDI. Проверьте разрешение браузера.';}finally{$('midi').disabled=false;}};
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&engine.recording)notify('Держите вкладку открытой для непрерывной записи.');});
 window.addEventListener('beforeunload',e=>{if(engine.recording){e.preventDefault();e.returnValue='';}});
+
+setupYouTube({
+  notify,
+  onBusy(value){sourceImportBusy=value;for(const id of ['demo','upload'])$(id).disabled=value||busy;},
+  async onImport(bytes,name,signal){
+    if(!offline)throw Error('Web Audio недоступен.');
+    if(bytes.byteLength>24*1024*1024)throw Error('Полученный отрезок слишком большой.');
+    const buffer=await offline.decodeAudioData(bytes);
+    if(buffer.duration<.05||buffer.duration>120.15)throw Error('Сервис вернул отрезок неверной длительности.');
+    while(busy){if(signal.aborted)throw new DOMException('Cancelled','AbortError');await new Promise(resolve=>setTimeout(resolve,50));}
+    if(signal.aborted)throw new DOMException('Cancelled','AbortError');
+    busy=true;
+    try{await engine.stop();if(signal.aborted)throw new DOMException('Cancelled','AbortError');setSource(buffer,name);$('status').textContent='Отрезок готов';}
+    finally{busy=false;transport();}
+  }
+});
