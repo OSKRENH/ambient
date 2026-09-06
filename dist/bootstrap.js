@@ -6,3 +6,4 @@ window.fetch=(input,init)=>{
 };
 await import('./trim.js');
 await import('./app.js');
+await import('./help.js');
