@@ -1,0 +1,44 @@
+{
+	"pattrstorage" : 	{
+		"name" : "u034000306",
+		"slots" : 		{
+			"1" : 			{
+				"id" : 1,
+				"data" : 				{
+					"amplitude_midi" : [ 64 ],
+					"delay_feedback_midi" : [ 50 ],
+					"delay_filter_midi" : [ 52 ],
+					"delay_mix_midi" : [ 53 ],
+					"delay_time_midi" : [ 51 ],
+					"filter_cutoff_midi" : [ 55 ],
+					"filter_resonance_midi" : [ 56 ],
+					"filter_type_midi" : [ 54 ],
+					"gran_pitch_midi" : [ 22 ],
+					"gran_rand_midi" : [ 24 ],
+					"gran_rand_pitch_midi" : [ 25 ],
+					"gran_rand_pitch_quant_midi" : [ 26 ],
+					"gran_size_midi" : [ 23 ],
+					"gran_speed_midi" : [ 21 ],
+					"pitchshift_1_midi" : [ 41 ],
+					"pitchshift_2_midi" : [ 43 ],
+					"pitchshift_3_midi" : [ 45 ],
+					"pitchshift_mix_1_midi" : [ 42 ],
+					"pitchshift_mix_2_midi" : [ 44 ],
+					"pitchshift_mix_3_midi" : [ 46 ],
+					"rand_pan_midi" : [ 63 ],
+					"reverb_damping_midi" : [ 61 ],
+					"reverb_early_midi" : [ 21 ],
+					"reverb_mix_midi" : [ 62 ],
+					"reverb_roomsize_midi" : [ 57 ],
+					"reverb_tail_midi" : [ 60 ],
+					"reverb_time_midi" : [ 58 ],
+					"trigger_midi" : [ 27 ]
+				}
+
+			}
+
+		}
+
+	}
+
+}
