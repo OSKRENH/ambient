@@ -1,1 +1,10 @@
-{"name":"ambient-web","private":true,"version":"0.1.0","type":"module","scripts":{"test":"node --test tests/*.test.js"}}
+{
+  "name": "ambient-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "build": "python3 server/build_worker.py"
+  }
+}

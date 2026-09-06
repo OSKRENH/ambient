@@ -1,6 +1,8 @@
 # Ambient Web
 
-Browser granular audio instrument inspired by the parameter and preset data in `ambient_v0.3.zip`. No build step or external JavaScript dependencies. Serve `dist/` over HTTPS (or localhost). AudioWorklet requires a secure context. Open `dist/index.html` via a web server, not `file://`.
+YouTube clip import is prepared on this branch; deployment and live extraction verification are pending. See [server/README.md](server/README.md) for the container and Sites connection. The existing live site has not been changed.
+
+Browser granular audio instrument inspired by the parameter and preset data in `ambient_v0.3.zip`. The frontend has no external JavaScript dependencies. Serve `dist/` over HTTPS (or localhost) for local-file audio workflows. The YouTube-enabled Sites deployment uses `python3 server/build_worker.py` to bundle the same assets with a server proxy. AudioWorklet requires a secure context. Open `dist/index.html` via a web server, not `file://`.
 
 ## Features
 
@@ -20,10 +22,10 @@ All mappings are new and explicit in `parameters.js` / `audio.js`: size 20–150
 
 MIDI CC21 is duplicated in the source map (speed and early reverb). The web app assigns it to speed only. The original MIDI file is retained unchanged for reference. MIDI does not request sysex. Availability depends on browser support and permission. No Web MIDI support is required for the on-screen controls.
 
-Audio never leaves the browser. No user account, server processing or media upload is used. Long imported sources and recordings use browser memory, so limits are enforced. For continuous playback/recording, keep the browser foregrounded; mobile browsers may suspend background audio. Stop clears the audio graph and effect tails; pause suspends the context. Browsers must support AudioWorklet, Web Audio, ES modules and native dialog. Google Fonts is optional and falls back to local sans-serif.
+Local audio processing stays in the browser. YouTube imports send the video URL and timestamps to the clip service; the temporary WAV is downloaded into the same local engine. Long imported sources and recordings use browser memory, so limits are enforced. For continuous playback/recording, keep the browser foregrounded; mobile browsers may suspend background audio. Stop clears the audio graph and effect tails; pause suspends the context. Browsers must support AudioWorklet, Web Audio, ES modules and native dialog. Google Fonts is optional and falls back to local sans-serif.
 
 ## Development
 
 Run `python3 -m http.server 8080 --directory dist`, open localhost:8080. No package install is needed. `npm test` validates granular DSP through a mocked AudioWorklet host, preset normalization and the WAV encoder. Browser playback/visual QA is a separate manual check and is not implied by these tests.
 
-The `.openai/hosting.json` file identifies the private Sites deployment. The exact authored static files in `dist/` are the deployment source. This repository can also be served by a static host using `dist` as the publish directory with no build command.
+The `.openai/hosting.json` file identifies the private Sites deployment. The authored frontend in `dist/` and API proxy in `server/worker.js` are the deployment source. This repository can also be served by a static host using `dist` as the publish directory with no build command.
