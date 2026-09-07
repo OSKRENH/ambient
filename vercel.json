@@ -1,5 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "echo 'Static Ambient Web — no build step'",
-  "outputDirectory": "dist"
-}
